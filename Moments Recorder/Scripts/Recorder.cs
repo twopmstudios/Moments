@@ -289,41 +289,40 @@ namespace Moments
 			FlushMemory();
 		}
 
-		void OnRenderImage(RenderTexture source, RenderTexture destination)
-		{
-			if (State != RecorderState.Recording)
-			{
-				Graphics.Blit(source, destination);
-				return;
-			}
+		void LateUpdate() {
 
 			m_Time += Time.unscaledDeltaTime;
 
 			if (m_Time >= m_TimePerFrame)
 			{
-				// Limit the amount of frames stored in memory
-				if (m_Frames.Count >= m_MaxFrameCount)
-					m_RecycledRenderTexture = m_Frames.Dequeue();
+				StartCoroutine(RecordFrame());
+			}	
+		}
 
-				m_Time -= m_TimePerFrame;
+		IEnumerator RecordFrame()
+		{
+			yield return new WaitForEndOfFrame();
 
-				// Frame data
-				RenderTexture rt = m_RecycledRenderTexture;
-				m_RecycledRenderTexture = null;
+			// Limit the amount of frames stored in memory
+			if (m_Frames.Count >= m_MaxFrameCount)
+				m_RecycledRenderTexture = m_Frames.Dequeue();
 
-				if (rt == null)
-				{
-					rt = new RenderTexture(m_Width, m_Height, 0, RenderTextureFormat.ARGB32);
-					rt.wrapMode = TextureWrapMode.Clamp;
-					rt.filterMode = FilterMode.Bilinear;
-					rt.anisoLevel = 0;
-				}
+			m_Time -= m_TimePerFrame;
 
-				Graphics.Blit(source, rt);
-				m_Frames.Enqueue(rt);
+			// Frame data
+			RenderTexture rt = m_RecycledRenderTexture;
+			m_RecycledRenderTexture = null;
+
+			if (rt == null)
+			{
+				rt = new RenderTexture(m_Width, m_Height, 0, RenderTextureFormat.ARGB32);
+				rt.wrapMode = TextureWrapMode.Clamp;
+				rt.filterMode = FilterMode.Bilinear;
+				rt.anisoLevel = 0;
 			}
 
-			Graphics.Blit(source, destination);
+			ScreenCapture.CaptureScreenshotIntoRenderTexture(rt);
+			m_Frames.Enqueue(rt);
 		}
 
 		#endregion
