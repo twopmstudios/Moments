@@ -428,10 +428,33 @@ namespace Moments
 		{
 			RenderTexture.active = source;
 			target.ReadPixels(new Rect(0, 0, source.width, source.height), 0, 0);
+			FlipTextureVertically(target);
+			
 			target.Apply();
 			RenderTexture.active = null;
 
 			return new GifFrame() { Width = target.width, Height = target.height, Data = target.GetPixels32() };
+		}
+
+		// Yoinked from https://stackoverflow.com/questions/54623187/unity-flip-texture-using-c-sharp
+		public static void FlipTextureVertically(Texture2D original)
+		{
+			var originalPixels = original.GetPixels();
+
+			Color[] newPixels = new Color[originalPixels.Length];
+
+			int width = original.width;
+			int rows = original.height;
+
+			for (int x = 0; x < width; x++)
+			{
+				for (int y = 0; y < rows; y++)
+				{
+					newPixels[x + y * width] = originalPixels[x + (rows - y -1) * width];
+				}
+			}
+
+			original.SetPixels(newPixels);
 		}
 
 		#endregion
